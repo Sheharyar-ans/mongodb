@@ -1,107 +1,106 @@
+import express from 'express';
+import morgan from 'morgan';
+import cors from "cors";
+import mongoose from 'mongoose';
 
+mongoose.connect('mongodb+srv://Sheharyar:<password>@cluster0.ebtls.mongodb.net/myFirstDatabase?retryWrites=true&w=majority');
+const User = mongoose.model('User', {
+  name: String,
+  email: String,
+  address: String
+});
 
-const responseDiv = document.getElementById("response-div");
-const resultDiv = document.getElementById("result-div");
-let users = [];
+const app = express()
+const port = process.env.PORT || 3000
 
-const getUsers = () => {
-  const URL = "https://registration-assignment1.herokuapp.com/users";
+app.use(cors())
+app.use(express.json())
+app.use(morgan('short'))
 
-  axios.get(URL).then((response) => {
-    users = response.data;
+app.use((req, res, next) => {
+  console.log("a request came", req.body);
+  next()
+})
 
-    if (response.data.length === 0) {
-      responseDiv.innerHTML = "No Users";
+app.get('/users', (req, res) => {
+
+  User.find({}, (err, users) => {
+    if (!err) {
+      res.send(users)
     } else {
-      responseDiv.innerHTML = "";
-
-      const usersList = users.map((user, index) => {
-        return `<tr><td>${index}</td><td>${user.name}</td><td>${user.email}</td><td>${user.address}</td><td><button class="btn btn-primary" onclick="editUser('${user._id}', ${index})">Edit</button></td><td><button class="btn btn-danger" onclick="deleteUser('${user._id}')">Delete</button></td></tr>`;
-      });
-
-      resultDiv.innerHTML = "";
-
-      resultDiv.innerHTML = usersList.join("");
+      res.status(500).send("error happened")
     }
-  });
-};
+  })
 
-getUsers();
 
-const addUser = () => {
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const address = document.getElementById("address").value;
-  const addUserURL = "https://registration-assignment1.herokuapp.com/user";
+})
+app.get('/user/:id', (req, res) => {
 
-  if (name === "" || email === "" || address === "") {
-    alert("Please Fill All the Fields");
+  User.findOne({ _id: req.params.id }, (err, user) => {
+    if (!err) {
+      res.send(user)
+    } else {
+      res.status(500).send("error happened")
+    }
+  })
+
+})
+app.post('/user', (req, res) => {
+
+  if (!req.body.name || !req.body.email || !req.body.address) {
+    res.status(400).send("invalid data");
   } else {
-    const userData = {
-      name: name,
-      email: email,
-      address: address,
-    };
-
-    axios.post(addUserURL, userData).then((response) => {
-      alert(`${userData.name} is Added`);
-      getUsers();
-      const name = (document.getElementById("name").value = "");
-      const email = (document.getElementById("email").value = "");
-      const address = (document.getElementById("address").value = "");
+    const newUser = new User({
+      name: req.body.name,
+      email: req.body.email,
+      address: req.body.address
+    });
+    newUser.save().then(() => {
+      console.log('user created success')
+      res.send("users created");
     });
   }
-};
+})
+app.put('/user/:id', (req, res) => {
+  let updateObj = {}
 
-const deleteUser = (_id) => {
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
-  const address = document.getElementById("address").value;
-  const deleteUserURL = `https://registration-assignment1.herokuapp.com/user/${_id}`;
+  if (req.body.name === "" || req.body.name) {
+    updateObj.name = req.body.name
+  }
+  if (req.body.email === "" || req.body.email) {
+    updateObj.email = req.body.email
+  }
+  if (req.body.address === "" || req.body.address) {
+    updateObj.address = req.body.address
+  }
 
-  const userData = {
-    name: name,
-    email: email,
-    address: address,
-  };
+  User.findByIdAndUpdate(req.params.id, updateObj, { new: true },
+    (err, data) => {
+      if (!err) {
+        res.send(data)
+      } else {
+        res.status(500).send("error happened")
+      }
+    })
+})
+app.delete('/user/:id', (req, res) => {
 
-  axios.delete(deleteUserURL, userData).then((res) => {
-    alert(`${userData.name} User Deleted Successfully`);
+  User.findByIdAndRemove(req.params.id, (err, data) => {
+    if (!err) {
+      res.send("user deleted")
+    } else {
+      res.status(500).send("error happened")
+    }
+  })
+})
 
-    resultDiv.innerHTML = "";
+app.get('/home', (req, res) => {
+  res.send('here is your home')
+})
+app.get('/', (req, res) => {
+  res.send('Hi I am a hello world Server program')
+})
 
-    getUsers();
-  });
-};
-
-const editUser = (_id, index) => {
-  const userObject = users[index];
-
-  resultDiv.innerHTML = `<tr id="${_id}">
-  <td id=${_id}> ${index} </td>
-  <td><input class="form-control shadow-none" type="text" id="${_id}-name" value="${userObject.name}" /></td>
-  <td><input class="form-control shadow-none" type="text" id="${_id}-email" value="${userObject.email}" /></td>
-  <td><input class="form-control shadow-none" type="text" id="${_id}-address" value="${userObject.address}" /></td>
-  <td><button class="btn btn-success" onclick="updateUser('${_id}')">Update</button></td>
-  </tr>`;
-};
-
-const updateUser = (_id) => {
-  const name = document.getElementById(`${_id}-name`).value;
-  const email = document.getElementById(`${_id}-email`).value;
-  const address = document.getElementById(`${_id}-address`).value;
-
-  const updateUserURL = `https://registration-assignment1.herokuapp.com/user/${_id}`;
-
-  const userData = {
-    id: _id,
-    name: name,
-    email: email,
-    address: address,
-  };
-
-  axios.put(updateUserURL, userData).then((res) => {
-    alert(`${userData.name} is Updated`);
-    getUsers();
-  });
-};
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`)
+})
