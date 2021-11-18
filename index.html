@@ -80,7 +80,7 @@
             let email = document.getElementById("inputEmail").value
             let address = document.getElementById("inputAddress").value
 
-            axios.post('https://mongodbcrudapp.herokuapp.com/user', {
+            axios.post('https://node-js870.herokuapp.com/user', {
                 name, email, address
             })
                 .then(function (response) {
@@ -105,7 +105,7 @@
 
         function getAllUser() {
 
-            axios.get('https://mongodbcrudapp.herokuapp.com/users')
+            axios.get('https://node-js870.herokuapp.com/users')
                 .then(function (response) {
                     console.log(response);
 
@@ -152,7 +152,7 @@
 
         function deleteUser(_id) {
 
-            axios.delete(`https://mongodbcrudapp.herokuapp.com/user/${_id}`)
+            axios.delete(`https://node-js870.herokuapp.com/user/${_id}`)
                 .then(function (response) {
                     console.log(response);
 
@@ -176,7 +176,7 @@
             const email = document.getElementById(`${_id}-email`).value
             const address = document.getElementById(`${_id}-address`).value
 
-            axios.put(`https://mongodbcrudapp.herokuapp.com/user/${_id}`, { name, email, address })
+            axios.put(`https://node-js870.herokuapp.com/${_id}`, { name, email, address })
                 .then(function (response) {
                     console.log(response);
 
